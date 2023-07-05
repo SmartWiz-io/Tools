@@ -1,21 +1,11 @@
 ﻿<#
 .SYNOPSIS
-  <Overview of script>
-
-.DESCRIPTION
-  <Brief description of script>
-
-.PARAMETER <Parameter_Name>
-    <Brief description of parameter input required. Repeat this attribute if required>
+  Tools to Populate Unit Test Files for an exsisting directory
 
 .NOTES
   Version:        1.0
-  Author:         <Name>
-  Creation Date:  <Date>
-  Purpose/Change: Initial script development
-  
-.EXAMPLE
-  <Example goes here. Repeat this attribute for more than one example>
+  Author:         Geoffrey DeFilippi (gdefilippi@smartwiz.io)
+  Creation Date:  7/1/2023
 #>
 
 <#
@@ -85,10 +75,11 @@ function Throw-ToolError
 .SYNOPSIS
   Return the delta of two paths
 
+.PARAMETER Item
+    [System.IO.FileSystemInfo] [Mandatory] [ValueFromPipeline] Full Path to File or Directory of which we want to take off the base
 .PARAMETER RootDirectory
     [System.IO.DirectoryInfo] [Mandatory] Base DirectoryInfo (Object) to remove
-.PARAMETER Item
-    [System.IO.FileSystemInfo] [Mandatory] Full Path to File or Directory of which we want to take off the base
+
 
 .NOTES
   Version:        1.0
@@ -141,14 +132,14 @@ function Get-PathPortion
     Not the best approach as it is brittle and could be better with full regex later
 
 .PARAMETER ItemRelativePath
-    [string] [Mandatory] The relative portion of the path and the file name example: home\project-one\controllers\serviceController.cs
+    [string] [Mandatory] [ValueFromPipeline] The relative portion of the path and the file name example: home\project-one\controllers\serviceController.cs
 
-.PARAMETER FilteTypeFilter
+.PARAMETER FilteTypes
     [string] [Optional] File Extension to Match.  Defaults to .cs if not supplied
 
-.PARAMETER NewFileType
-    [string] [Optional] Sort of like a new file type, but really just appending .Tests after the file name and before the file extension.  
-    Defaults to .Test.cs if not supplied 
+.PARAMETER NewPathPortion
+    [string] [Optional] A part of the file name that is put prior to the file extension
+    Defaults to .Test if not supplied 
 
 .NOTES
   Version:        1.0
@@ -167,13 +158,25 @@ function Get-NewItemName
         [Parameter(Mandatory, ValueFromPipeline)]    
         [string] $ItemRelativePath,
 
-        [string] $FileTypeFilter = '.cs',
+        [string[]] $FileTypes = @('.cs'),
 
-        [string] $NewFileType = '.Tests.cs'
+        [string] $NewPathPortion = '.Tests'
     )
 
-    return $ItemRelativePath -replace $FileTypeFilter, $NewFileType
+    #normalize to lowercase
+    $ItemRelativePath = $ItemRelativePath.ToLower();
 
+    foreach($fileType in $FileTypes)
+    {
+        if($ItemRelativePath.EndsWith($FileTypes))
+        {
+            # Add the path portion before the file type
+            $newEndPortion = $NewPathPortion + $fileType;
+
+            # remove the filetype match off the end and add the new end portion
+            return $ItemRelativePath.TrimEnd($FileType) + $newEndPortion;
+        }
+    }
 }
 
 <#
@@ -220,12 +223,16 @@ Would Result in:
           └╴SomeFile.txt
   
 .PARAMETER Directory
-    [System.IO.DirectoryInfo] [Mandatory] Path to get recursive items from
+    [System.IO.DirectoryInfo] [Mandatory] [ValueFromPipeline] Path to get recursive items from
     example: C:\Temp\Test
 
 .PARAMETER ExcludedDirectories
     [string[]] Array of strings that are root / top  level folders to exclude
     example: 'bin','obj'
+
+.PARAMETER IncludedFileTypes
+    [string[]] Array of file extensions to work with
+    example: '.cs'
 
 .NOTES
   Version:        1.0
@@ -261,7 +268,27 @@ function Get-ChildItemExcludeRootSubFolders
     # might want exclude at root, exclude as like, exclude starts with.  or have it be a list of types of exclusions or a switch
 }
 
+<#
+.SYNOPSIS
+  Take a path and make sure it exsists
 
+.DESCRIPTION
+  Given a string path, check it to ensure it isn't a file and then create it fully on the file system
+
+.PARAMETER Path
+    [string] [Mandatory] [ValueFromPipeline] Path of some directory
+
+.NOTES
+  Version:        1.0
+  Author:         Geoffrey DeFilippi (gdefilippi@smartwiz.io)
+  Creation Date:  7/1/2023
+
+  
+.EXAMPLE
+  'C:\Temp\Test' | Ensure-Path
+  
+  Ensure-Path -Path 'C:\Temp\Test'
+#>
 function Ensure-Path
 {
     param(
@@ -381,8 +408,12 @@ function Copy-DirectoryForUnitTests
                 # Ensure the directory is created
                 $parentContainer | Ensure-Path
                 
-                # Copy the template object to the new name and path
-                $TemplateFileName.CopyTo($newFullName) | Out-Null;
+                # If the object already exsists then leave it:
+                if(-not (Test-Path -Path $newFullName -PathType Leaf))
+                {
+                    # Copy the template object to the new name and path
+                    $TemplateFileName.CopyTo($newFullName) | Out-Null;
+                }
                 break;
             }
             
