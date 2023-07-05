@@ -104,7 +104,7 @@ function Get-PathPortion
     )
 
     $itemPath = $Item.FullName;
-    $basePath = $RootDirectory.FullNamel
+    $basePath = $RootDirectory.FullName;
 
     # Validate we have the same base path
     # https://stackoverflow.com/questions/444798/case-insensitive-containsstring
@@ -113,8 +113,8 @@ function Get-PathPortion
     {
         # If the base path is not contained in the item path... Throw
         Throw-ToolError `
-            -Message 3 `
-            -Number $MODULEERRORS[3] `
+            -Message $MODULEERRORS[3] `
+            -Number  3 `
             -Data ([string]::Format("Base {0} - Item {1}", $basePath, $itemPath))
     }
 
