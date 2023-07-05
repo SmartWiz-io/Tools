@@ -69,7 +69,7 @@ function Throw-ToolError
     }
 
     throw $errorMessage;
-}
+} 
 
 <#
 .SYNOPSIS
@@ -103,22 +103,24 @@ function Get-PathPortion
 
     )
 
-    $basePath = ($RootDirectory.FullName).ToLower();
-    $itemPath = ($Item.FullName).ToLower();
+    $itemPath = $Item.FullName;
+    $basePath = $RootDirectory.FullNamel
 
     # Validate we have the same base path
-    if(-not ($itemPath.Contains($basePath)))
+    # https://stackoverflow.com/questions/444798/case-insensitive-containsstring
+    # tricky so we will assume this is all in EN-us locale for now.
+    if( $itemPath.IndexOf($basePath, [System.StringComparison]::OrdinalIgnoreCase) -lt 0)
     {
         # If the base path is not contained in the item path... Throw
         Throw-ToolError `
             -Message 3 `
-            -Number $MODULEERROR[3] `
+            -Number $MODULEERRORS[3] `
             -Data ([string]::Format("Base {0} - Item {1}", $basePath, $itemPath))
     }
 
     # Remove the base path and return remainder
     # example RootDirectory: c:\taxes\data\ Item: c:\taxes\data\subdir\myfile.cs -> 
-    $relativePathItem = $itemPath.Replace($basePath, '');
+    $relativePathItem = $itemPath -ireplace [regex]::Escape($basePath.FullName),''
 
     #remove a leading '\' if present (use single quotes or we need to escape the backslash
     return $relativePathItem.TrimStart('\');
@@ -163,12 +165,9 @@ function Get-NewItemName
         [string] $NewPathPortion = '.Tests'
     )
 
-    #normalize to lowercase
-    $ItemRelativePath = $ItemRelativePath.ToLower();
-
     foreach($fileType in $FileTypes)
     {
-        if($ItemRelativePath.EndsWith($FileTypes))
+        if($ItemRelativePath.EndsWith($FileTypes, [System.StringComparison]::OrdinalIgnoreCase))
         {
             # Add the path portion before the file type
             $newEndPortion = $NewPathPortion + $fileType;
@@ -315,7 +314,7 @@ function Ensure-Path
     if(Test-Path $Path -PathType Leaf)
     {
         Throw-ToolError `
-            -Message $MODULEERROR[4] `
+            -Message $MODULEERRORS[4] `
             -Number 4 `
             -Data ([string]::Format("Base {0} - Item {1}", $basePath, $itemPath))        
     }
@@ -423,7 +422,7 @@ function Copy-DirectoryForUnitTests
                 # Encountered a fatal type outside of acceptable types
                 # We may want to eat this and log later.
                 Throw-ToolError `
-                    -Message $MODULEERROR[5] `
+                    -Message $MODULEERRORS[5] `
                     -Number 5 `
                     -Data ($item.GetType().Name)
             }
