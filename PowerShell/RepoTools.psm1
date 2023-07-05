@@ -120,7 +120,7 @@ function Get-PathPortion
 
     # Remove the base path and return remainder
     # example RootDirectory: c:\taxes\data\ Item: c:\taxes\data\subdir\myfile.cs -> 
-    $relativePathItem = $itemPath -ireplace [regex]::Escape($basePath.FullName),''
+    $relativePathItem = $itemPath -ireplace [regex]::Escape($basePath),''
 
     #remove a leading '\' if present (use single quotes or we need to escape the backslash
     return $relativePathItem.TrimStart('\');
@@ -173,7 +173,8 @@ function Get-NewItemName
             $newEndPortion = $NewPathPortion + $fileType;
 
             # remove the filetype match off the end and add the new end portion
-            return $ItemRelativePath.TrimEnd($FileType) + $newEndPortion;
+            # add regex escape to deal with . being wildcard in regex
+            return $ItemRelativePath.TrimEnd([regex]::Escape($fileType)) + $newEndPortion;
         }
     }
 }
