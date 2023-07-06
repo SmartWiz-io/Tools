@@ -329,26 +329,49 @@ function Ensure-Path
     }
 }
 
+<#
+.SYNOPSIS
+  Take a Unit Test or template file and copy it and update the class name to match the incoming leaf name
+
+.PARAMETER NewFullFileName
+    [string] [Mandatory] [ValueFromPipeline] The Full Name and Path to copy the TPL File to
+.PARAMETER TemplateFile
+    [System.IO.FileInfo] [Mandatory] The TemplateFile to base off of
+
+.NOTES
+  Version:        1.0
+  Author:         Geoffrey DeFilippi (gdefilippi@smartwiz.io)
+  Creation Date:  7/1/2023
+
+  
+.EXAMPLE
+  'C:\Temp\Test\MyClass.Test.cs' | Copy-ToUnitTestFile -TemplateFile "C:\Samples\UnitTest1.cs"
+  # Would copy the file from Samples\UnitTest1.cs -> name it to C:\Temp\Test\MyClass.Test.cs and replace in teh file text public class Tests -> public class MyClassTests
+  
+#>
 function Copy-ToUnitTestFile
 {
     param(
-
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [string] $NewFullFileName,
+        [Parameter(Mandatory)]   
+        [System.IO.FileInfo] $TemplateFile
     )
     
     # This splits the leaf off ex: c:\test\file.cs = file.cs (leaf).  Then breaks to array on . so file.cs -> a[0] = file, a[1]=cs. and then returns the filename without a file extension
-    $leafName = (($newFullName | Split-Path -Leaf) -split ".")[0]
+    $leafName = (($NewFullFileName | Split-Path -Leaf) -split ".")[0]
 
     # Copy the template object to the new name and path
-    $TemplateFileName.CopyTo($newFullName) | Out-Null;
+    $TemplateFile.CopyTo($NewFullFileName) | Out-Null;
 
     # Update the class name to match the FileName (This is generally correct)
     # https://mcpmag.com/articles/2018/08/08/replace-text-with-powershell.aspx    
-    $tplContent = Get-Content -Path $newFullName -Raw
+    $tplContent = Get-Content -Path $NewFullFileName -Raw;
 
     #
-    $tplContent -replace "public class (.\w+)", "public class $leafName"
+    $tplContent -replace "public class (.\w+)", [string]::Format("public class {0}Tests", $leafName);
 
-    $tplContent | Out-File $newFullName -Force | Out-Null
+    $tplContent | Out-File $NewFullFileName -Force | Out-Null;
 }
 
 <#
