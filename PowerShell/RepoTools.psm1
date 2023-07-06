@@ -359,7 +359,7 @@ function Copy-ToUnitTestFile
     )
     
     # This splits the leaf off ex: c:\test\file.cs = file.cs (leaf).  Then breaks to array on . so file.cs -> a[0] = file, a[1]=cs. and then returns the filename without a file extension
-    $leafName = (($NewFullFileName | Split-Path -Leaf) -split ".")[0]
+    $leafName = (($NewFullFileName | Split-Path -Leaf).split("."))[0]
 
     # Copy the template object to the new name and path
     $TemplateFile.CopyTo($NewFullFileName) | Out-Null;
@@ -369,9 +369,9 @@ function Copy-ToUnitTestFile
     $tplContent = Get-Content -Path $NewFullFileName -Raw;
 
     #
-    $tplContent -replace "public class (.\w+)", [string]::Format("public class {0}Tests", $leafName);
+    $tplContentFixed = $tplContent -replace "public class (.\w+)", [string]::Format("public class {0}Tests", $leafName);
 
-    $tplContent | Out-File $NewFullFileName -Force | Out-Null;
+    $tplContentFixed | Out-File $NewFullFileName -Force | Out-Null;
 }
 
 <#
