@@ -329,6 +329,28 @@ function Ensure-Path
     }
 }
 
+function Copy-ToUnitTestFile
+{
+    param(
+
+    )
+    
+    # This splits the leaf off ex: c:\test\file.cs = file.cs (leaf).  Then breaks to array on . so file.cs -> a[0] = file, a[1]=cs. and then returns the filename without a file extension
+    $leafName = (($newFullName | Split-Path -Leaf) -split ".")[0]
+
+    # Copy the template object to the new name and path
+    $TemplateFileName.CopyTo($newFullName) | Out-Null;
+
+    # Update the class name to match the FileName (This is generally correct)
+    # https://mcpmag.com/articles/2018/08/08/replace-text-with-powershell.aspx    
+    $tplContent = Get-Content -Path $newFullName -Raw
+
+    #
+    $tplContent -replace "public class (.\w+)", "public class $leafName"
+
+    $tplContent | Out-File $newFullName -Force | Out-Null
+}
+
 <#
 .SYNOPSIS
   Copy File Structure and make Unit Test files for CS files
@@ -415,6 +437,8 @@ function Copy-DirectoryForUnitTests
                     # Copy the template object to the new name and path
                     $TemplateFileName.CopyTo($newFullName) | Out-Null;
                 }
+
+
                 break;
             }
             
