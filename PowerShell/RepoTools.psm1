@@ -160,9 +160,9 @@ function Get-NewItemName
         [Parameter(Mandatory, ValueFromPipeline)]    
         [string] $ItemRelativePath,
 
-        [string[]] $FileTypes = @('.cs'),
+        [string[]] $FileTypes = @(".cs"),
 
-        [string] $NewPathPortion = '.Tests'
+        [string] $NewPathPortion = ".Tests"
     )
 
     foreach($fileType in $FileTypes)
@@ -172,9 +172,10 @@ function Get-NewItemName
             # Add the path portion before the file type
             $newEndPortion = $NewPathPortion + $fileType;
 
-            # remove the filetype match off the end and add the new end portion
-            # add regex escape to deal with . being wildcard in regex
-            return $ItemRelativePath.TrimEnd([regex]::Escape($fileType)) + $newEndPortion;
+            # fix to find and remove substring will throw if not found (but we already checked this case in the if above)
+            $newEndlessPortion = $ItemRelativePath.Substring(0, $ItemRelativePath.LastIndexOf($fileType))
+
+            return $newEndlessPortion + $newEndPortion;
         }
     }
 }
