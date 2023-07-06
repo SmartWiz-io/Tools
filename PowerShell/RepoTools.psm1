@@ -458,7 +458,7 @@ function Copy-DirectoryForUnitTests
                 if(-not (Test-Path -Path $newFullName -PathType Leaf))
                 {
                     # Copy the template object to the new name and path
-                    $TemplateFileName.CopyTo($newFullName) | Out-Null;
+                    $newFullName | Copy-ToUnitTestFile -TemplateFile $TemplateFileName
                 }
 
 
